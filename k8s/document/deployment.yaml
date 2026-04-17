@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aruba-document
+  labels:
+    app: aruba-document
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aruba-document
+  template:
+    metadata:
+      labels:
+        app: aruba-document
+    spec:
+      containers:
+        - name: aruba-document
+          image: aruba-document:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+
+            # MongoDB
+            - name: MONGODB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: connectionString
+
+            # JWT Settings
+            - name: JwtSettings__Secret
+              valueFrom:
+                secretKeyRef:
+                  name: aruba-document-jwt-secret
+                  key: secret
+
+            - name: JwtSettings__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: aruba-document-config
+                  key: JwtSettings__Issuer
+
+            - name: JwtSettings__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: aruba-document-config
+                  key: JwtSettings__Audience
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20

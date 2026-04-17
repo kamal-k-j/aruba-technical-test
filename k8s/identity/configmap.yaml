@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aruba-identity-config
+data:
+  JwtSettings__Issuer: "Aruba.Identity"
+  JwtSettings__Audience: "Aruba.Identity.Clients"
+  JwtSettings__ExpiryMinutes: "60"

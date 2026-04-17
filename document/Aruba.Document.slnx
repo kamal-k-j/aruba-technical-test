@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/Aruba.Document.Api/Aruba.Document.Api.csproj" />
+  <Project Path="src/Aruba.Document.Application/Aruba.Document.Application.csproj" />
+  <Project Path="src/Aruba.Document.Domain/Aruba.Document.Domain.csproj" />
+  <Project Path="tests/Aruba.Document.FunctionalTests/Aruba.Document.FunctionalTests.csproj" Id="adcc5246-d830-49da-84e6-733b196119fa" />
+  <Project Path="src/Aruba.Document.Infrastructure/Aruba.Document.Infrastructure.csproj" />
+  <Project Path="tests/Aruba.Document.UnitTests/Aruba.Document.UnitTests.csproj" Id="adb345da-65c5-46fb-9a76-d4f05e1f81cb" />
+</Solution>

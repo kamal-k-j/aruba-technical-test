@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aruba-document-config
+data:
+  JwtSettings__Issuer: "Aruba.Identity"
+  JwtSettings__Audience: "Aruba.Identity.Clients"

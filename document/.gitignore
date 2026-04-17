@@ -1,0 +1,66 @@
+## Build folders
+bin/
+obj/
+out/
+[Bb]uild/
+[Ll]og/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Visual Studio Code
+.vscode/
+.history/
+
+## Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+## .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nuget.props
+*.nuget.targets
+
+## ASP.NET
+appsettings.Development.json
+appsettings.Local.json
+
+## Logs
+*.log
+logs/
+
+## Packages
+*.nupkg
+*.snupkg
+packages/
+*.cache
+*.tmp
+
+## Publish output
+publish/
+dist/
+
+## Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+## Docker
+docker-compose.override.yml
+**/Dockerfile.*
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Secrets (mai nel repo)
+*.secret
+*.key
+*.pem
+*.pfx

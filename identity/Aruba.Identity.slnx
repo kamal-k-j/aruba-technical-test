@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/Aruba.Identity.Api/Aruba.Identity.Api.csproj" />
+  <Project Path="src/Aruba.Identity.Application/Aruba.Identity.Application.csproj" />
+  <Project Path="src/Aruba.Identity.Domain/Aruba.Identity.Domain.csproj" />
+  <Project Path="tests/Aruba.Identity.FunctionalTests/Aruba.Identity.FunctionalTests.csproj" Id="adcc5246-d830-49da-84e6-733b196119fa" />
+  <Project Path="src/Aruba.Identity.Infrastructure/Aruba.Identity.Infrastructure.csproj" />
+  <Project Path="tests/Aruba.Identity.UnitTests/Aruba.Identity.UnitTests.csproj" Id="adb345da-65c5-46fb-9a76-d4f05e1f81cb" />
+</Solution>

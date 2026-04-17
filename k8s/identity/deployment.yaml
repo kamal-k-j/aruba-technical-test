@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aruba-identity
+  labels:
+    app: aruba-identity
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aruba-identity
+  template:
+    metadata:
+      labels:
+        app: aruba-identity
+    spec:
+      containers:
+        - name: aruba-identity
+          image: aruba-identity:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://0.0.0.0:8080"
+
+            # MongoDB
+            - name: MONGODB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: connectionString
+
+            # JWT Settings
+            - name: JwtSettings__Secret
+              valueFrom:
+                secretKeyRef:
+                  name: aruba-identity-jwt-secret
+                  key: secret
+
+            - name: JwtSettings__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: aruba-identity-config
+                  key: JwtSettings__Issuer
+
+            - name: JwtSettings__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: aruba-identity-config
+                  key: JwtSettings__Audience
+
+            - name: JwtSettings__ExpiryMinutes
+              valueFrom:
+                configMapKeyRef:
+                  name: aruba-identity-config
+                  key: JwtSettings__ExpiryMinutes
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
