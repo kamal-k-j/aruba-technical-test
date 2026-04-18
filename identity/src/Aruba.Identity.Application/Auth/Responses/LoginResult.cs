@@ -1,4 +1,4 @@
-﻿namespace Aruba.Identity.Application.Auth.Commands.Responses;
+﻿namespace Aruba.Identity.Application.Auth.Responses;
 
 public record LoginResult
 {

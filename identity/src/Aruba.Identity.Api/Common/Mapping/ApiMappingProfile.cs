@@ -4,7 +4,7 @@ using Aruba.Identity.Api.Users.Requests;
 using Aruba.Identity.Api.Users.Responses;
 using Aruba.Identity.Application.Auth.Commands.Login;
 using Aruba.Identity.Application.Auth.Commands.Register;
-using Aruba.Identity.Application.Auth.Commands.Responses;
+using Aruba.Identity.Application.Auth.Responses;
 using Aruba.Identity.Application.Users.Commands.Update;
 using Aruba.Identity.Application.Users.Responses;
 using AutoMapper;

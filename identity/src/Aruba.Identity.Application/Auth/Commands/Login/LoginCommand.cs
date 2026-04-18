@@ -1,4 +1,4 @@
-﻿using Aruba.Identity.Application.Auth.Commands.Responses;
+﻿using Aruba.Identity.Application.Auth.Responses;
 using MediatR;
 
 namespace Aruba.Identity.Application.Auth.Commands.Login;

@@ -1,4 +1,4 @@
-﻿using Aruba.Identity.Application.Auth.Commands.Responses;
+﻿using Aruba.Identity.Application.Auth.Responses;
 using Aruba.Identity.Application.Exceptions;
 using Aruba.Identity.Infrastructure.Auth;
 using Aruba.Identity.Infrastructure.Users.Repository;
