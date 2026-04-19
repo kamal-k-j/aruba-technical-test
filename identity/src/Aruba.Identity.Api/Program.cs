@@ -13,7 +13,8 @@ builder.Services
     .AddApi()
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
-    .AddAuthentication(builder.Configuration);
+    .AddAuthentication(builder.Configuration)
+    .AddSwaggerGenWithBearerAuth();
 
 builder.Services.AddEndpointsApiExplorer();
 

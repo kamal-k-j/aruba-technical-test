@@ -2,13 +2,14 @@
 using Aruba.Document.Infrastructure.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using System.Text;
 
 namespace Aruba.Document.Api.DependencyInjection;
 
 public static class ApiServiceRegistration
 {
-    public static IServiceCollection AddApi(this IServiceCollection services) => 
+    public static IServiceCollection AddApi(this IServiceCollection services) =>
         services
             .Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true)
             .AddAutoMapper(cfg => cfg.AddProfile<ApiMappingProfile>());
@@ -36,4 +37,23 @@ public static class ApiServiceRegistration
 
         return services;
     }
+
+    public static IServiceCollection AddSwaggerGenWithBearerAuth(this IServiceCollection services) =>
+        services.AddSwaggerGen(options =>
+        {
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Description = "JWT Bearer token. Example: **Bearer {token}**",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT"
+            });
+
+            options.AddSecurityRequirement(securityRequirement => new OpenApiSecurityRequirement
+            {
+                { new OpenApiSecuritySchemeReference("Bearer"), [] }
+            });
+        });
 }

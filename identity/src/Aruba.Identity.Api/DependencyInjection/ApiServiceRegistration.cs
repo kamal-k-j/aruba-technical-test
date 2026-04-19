@@ -2,6 +2,7 @@
 using Aruba.Identity.Infrastructure.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using System.Text;
 
 namespace Aruba.Identity.Api.DependencyInjection;
@@ -36,4 +37,23 @@ public static class ApiServiceRegistration
 
         return services;
     }
+
+    public static IServiceCollection AddSwaggerGenWithBearerAuth(this IServiceCollection services) =>
+    services.AddSwaggerGen(options =>
+    {
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Description = "JWT Bearer token. Example: **Bearer {token}**",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT"
+        });
+
+        options.AddSecurityRequirement(securityRequirement => new OpenApiSecurityRequirement
+        {
+                { new OpenApiSecuritySchemeReference("Bearer"), [] }
+        });
+    });
 }
