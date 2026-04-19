@@ -18,6 +18,10 @@ public class User : IEntity
 
     public string PasswordHash { get; private set; }
 
+    public DateTime CreatedAt { get; private set; }
+
+    public DateTime? UpdatedAt { get; private set; }
+
     public User(string userName, string email, string passwordHash, string address = null)
     {
         Id = ObjectId.GenerateNewId().ToString();
@@ -25,20 +29,24 @@ public class User : IEntity
         Email = email ?? throw new DomainException("Email cannot be empty.");
         PasswordHash = passwordHash ?? throw new DomainException("PasswordHash cannot be empty.");
         Address = address;
+        CreatedAt = DateTime.Now;
     }
 
     public void UpdateEmail(string newEmail)
     {
         Email = newEmail ?? throw new DomainException("Email cannot be empty.");
+        UpdatedAt = DateTime.Now;
     }
 
     public void UpdateAddress(string newAddress)
     {
         Address = newAddress;
+        UpdatedAt = DateTime.Now;
     }
 
     public void ChangePassword(string newPasswordHash)
     {
         PasswordHash = newPasswordHash ?? throw new DomainException("PasswordHash cannot be empty.");
+        UpdatedAt = DateTime.Now;
     }
 }

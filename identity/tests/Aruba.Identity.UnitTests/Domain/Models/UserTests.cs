@@ -24,6 +24,8 @@ public class UserTests
         user.Email.Should().Be("mario.rossi@gmail.com");
         user.PasswordHash.Should().Be("hashedpwd123");
         user.Address.Should().Be("Via Roma 10");
+        user.CreatedAt.Date.Should().Be(DateTime.Now.Date);
+        user.UpdatedAt.Should().BeNull();
     }
 
     [Fact]
@@ -82,6 +84,7 @@ public class UserTests
 
         // Then
         user.Email.Should().Be("new@gmail.com");
+        user.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -108,6 +111,7 @@ public class UserTests
 
         // Then
         user.Address.Should().Be("Via Milano 20");
+        user.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -121,6 +125,7 @@ public class UserTests
 
         // Then
         user.PasswordHash.Should().Be("newpwd");
+        user.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]

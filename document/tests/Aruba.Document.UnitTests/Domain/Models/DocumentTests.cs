@@ -19,7 +19,7 @@ public class DocumentTests
         document.CustomerName.Should().Be("Mario Rossi");
         document.Description.Should().Be("Test description");
         document.LinkedDocuments.Should().BeEmpty();
-        document.CreatedAt.Should().NotBe(default);
+        document.CreatedAt.Date.Should().Be(DateTime.Now.Date);
         document.UpdatedAt.Should().BeNull();
     }
 
@@ -56,7 +56,7 @@ public class DocumentTests
 
         // Then
         document.Status.Should().Be(DocumentStatus.Completed);
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class DocumentTests
 
         // Then
         document.Status.Should().Be(DocumentStatus.Sent);
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class DocumentTests
 
         // Then
         document.Status.Should().Be(DocumentStatus.Approved);
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public class DocumentTests
 
         // Then
         document.Status.Should().Be(DocumentStatus.Rejected);
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class DocumentTests
 
         // Then
         document.Type.Should().Be(DocumentType.SalesOrder);
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class DocumentTests
 
         // Then
         document.CustomerName.Should().Be("New Name");
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class DocumentTests
 
         // Then
         document.Description.Should().Be("New desc");
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
@@ -274,17 +274,17 @@ public class DocumentTests
 
         // Then
         document.LinkedDocuments.Should().Contain("123");
-        document.UpdatedAt.Should().NotBeNull();
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 
     [Fact]
     public void Document_LinkTo_ShouldThrow_WhenIdIsNull()
     {
         // Given
-        var doc = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
+        var document = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
 
         // When
-        Action act = () => doc.LinkTo(null);
+        Action act = () => document.LinkTo(null);
 
         // Then
         act.Should().Throw<DomainException>()
@@ -295,10 +295,10 @@ public class DocumentTests
     public void Document_LinkTo_ShouldThrow_WhenIdIsEmpty()
     {
         // Given
-        var doc = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
+        var document = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
 
         // When
-        Action act = () => doc.LinkTo("");
+        Action act = () => document.LinkTo("");
 
         // Then
         act.Should().Throw<DomainException>()
@@ -309,10 +309,10 @@ public class DocumentTests
     public void Document_LinkTo_ShouldThrow_WhenLinkingToSelf()
     {
         // Given
-        var doc = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
+        var document = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
 
         // When
-        Action act = () => doc.LinkTo(doc.Id);
+        Action act = () => document.LinkTo(document.Id);
 
         // Then
         act.Should().Throw<DomainException>()
@@ -323,11 +323,11 @@ public class DocumentTests
     public void Document_LinkTo_ShouldThrow_WhenAlreadyLinked()
     {
         // Given
-        var doc = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
-        doc.LinkTo("123");
+        var document = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
+        document.LinkTo("123");
 
         // When
-        Action act = () => doc.LinkTo("123");
+        Action act = () => document.LinkTo("123");
 
         // Then
         act.Should().Throw<DomainException>()
@@ -338,13 +338,13 @@ public class DocumentTests
     public void Document_LinkTo_ShouldAddLinkedDocument_WhenValid()
     {
         // Given
-        var doc = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
+        var document = new Document.Domain.Models.Document(DocumentType.Quote, "Mario", "desc");
 
         // When
-        doc.LinkTo("456");
+        document.LinkTo("456");
 
         // Then
-        doc.LinkedDocuments.Should().Contain("456");
-        doc.UpdatedAt.Should().NotBeNull();
+        document.LinkedDocuments.Should().Contain("456");
+        document.UpdatedAt?.Date.Should().Be(DateTime.Now.Date);
     }
 }
