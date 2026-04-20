@@ -14,7 +14,8 @@ A document management system built on a microservices architecture, running on K
 - [Document Lifecycle](#document-lifecycle)
 - [MongoDB Data Modeling](#mongodb-data-modeling)
 - [Kubernetes](#kubernetes)
-- [Getting Started](#getting-started)
+- [Running Locally](#running-locally)
+- [Running on Kubernetes with kind](#running-on-kubernetes-with-kind)
 - [Testing](#testing)
 - [Authentication](#authentication)
 
@@ -148,7 +149,7 @@ identity/
 │   │   │   └── Responses/             # UserResponse
 │   │   └── Common/
 │   │       ├── Middlewares/           # ExceptionHandlingMiddleware
-│   │       └── Mapping/              # ApiMappingProfile (AutoMapper)
+│   │       └── Mapping/               # ApiMappingProfile (AutoMapper)
 │   ├── Aruba.Identity.Application/
 │   │   ├── Auth/Commands/             # Login, Register (+ Validators)
 │   │   ├── Users/Commands/            # Update, Delete
@@ -179,7 +180,7 @@ document/
 │   │   │   └── Responses/             # DocumentResponse
 │   │   └── Common/
 │   │       ├── Middlewares/           # ExceptionHandlingMiddleware
-│   │       └── Mapping/              # ApiMappingProfile (AutoMapper)
+│   │       └── Mapping/               # ApiMappingProfile (AutoMapper)
 │   ├── Aruba.Document.Application/
 │   │   ├── Documents/Commands/        # Insert, Update, Approve, Reject, Send, Complete, Generate, Link
 │   │   ├── Documents/Queries/         # GetAll, GetById, Search
@@ -281,6 +282,20 @@ MongoDB was chosen as the datastore for its schema flexibility and native suppor
 }
 ```
 
+### Embedding vs Referencing
+
+- **Referencing** is used for document relationships (`linkedDocumentIds`, `sourceDocumentId`). Documents are large, independently queried entities — embedding would cause unbounded document growth and make individual document access unnecessarily heavy.
+- **Embedding** is used for small, tightly-coupled sub-objects that are always read together with the parent document.
+
+### Concurrency
+
+Optimistic concurrency is handled at the application level. State transitions use atomic MongoDB `FindOneAndUpdate` operations with status pre-conditions, ensuring that concurrent transitions do not corrupt document state.
+
+### Indexes
+
+- `Documents`: index on `status` and `type` to support filtered queries and searches efficiently.
+- `Users`: unique index on `email` to enforce uniqueness at the database level.
+
 ---
 
 ## Kubernetes
@@ -290,37 +305,50 @@ Each microservice has its own set of manifests under `k8s/`. MongoDB is deployed
 ```
 k8s/
 ├── document/
-│   ├── configmap.yaml     # Non-sensitive application configuration
-│   ├── secret.yaml        # JWT secret, MongoDB connection string
-│   ├── deployment.yaml    # Application deployment
-│   ├── service.yaml       # Internal ClusterIP service
-│   └── ingress.yaml       # External HTTP routing
+│   ├── configmap.yaml     # Non-sensitive application configuration (JWT issuer, audience)
+│   ├── secret.yaml        # JWT signing key, MongoDB connection string
+│   ├── deployment.yaml    # Application deployment (2 replicas, health probes)
+│   ├── service.yaml       # Internal ClusterIP service on port 8080
+│   └── ingress.yaml       # External HTTP routing via api.aruba.com/documents
 ├── identity/
-│   ├── configmap.yaml
-│   ├── secret.yaml
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── ingress.yaml
+│   ├── configmap.yaml     # Non-sensitive application configuration (JWT issuer, audience, expiry)
+│   ├── secret.yaml        # JWT signing key, MongoDB connection string
+│   ├── deployment.yaml    # Application deployment (2 replicas, health probes)
+│   ├── service.yaml       # Internal ClusterIP service on port 8080
+│   └── ingress.yaml       # External HTTP routing via api.aruba.com/auth and /users
 └── mongodb/
-    ├── statefulset.yaml   # MongoDB with persistent storage
-    ├── pvc.yaml           # PersistentVolumeClaim for data durability
-    ├── service.yaml       # Headless service for StatefulSet DNS resolution
-    └── secret.yaml        # MongoDB credentials
+    ├── statefulset.yaml   # MongoDB 6 with persistent storage
+    ├── pvc.yaml           # PersistentVolumeClaim (5Gi) for data durability
+    ├── service.yaml       # ClusterIP service on port 27017
+    └── secret.yaml        # MongoDB root credentials and connection string
 ```
+
+### Component Roles
+
+- **Deployment** – Manages the rollout and lifecycle of application pods. Configured with liveness (`/health/live`) and readiness (`/health/ready`) probes.
+- **Service (ClusterIP)** – Exposes each microservice internally within the cluster. Services communicate by service name via Kubernetes DNS.
+- **Ingress** – Routes external HTTP traffic to the appropriate service based on path rules under the host `api.aruba.com`.
+- **ConfigMap** – Stores non-sensitive configuration (JWT issuer, audience, expiry). Referenced by Deployments as environment variables.
+- **Secret** – Stores sensitive values (JWT signing key, MongoDB credentials, connection string). Referenced by Deployments as environment variables.
+- **StatefulSet** – Used for MongoDB to guarantee stable network identity and ordered pod management, required for data persistence.
+- **PersistentVolumeClaim** – Ensures MongoDB data survives pod restarts by mounting a persistent volume at `/data/db`.
+
+### Scaling
+
+Both microservices are stateless and run with 2 replicas by default. They can be scaled horizontally by increasing the `replicas` count in their Deployment. MongoDB runs as a single-node StatefulSet — for production, a replica set topology should be adopted.
 
 ---
 
-## Getting Started
+## Running Locally
 
 ### Prerequisites
 
 - .NET 10 SDK
-- MongoDB (local or via Docker)
-- Docker (optional)
+- MongoDB running locally or via Docker
 
 ### Configuration
 
-Update `appsettings.Development.json` in both services with your MongoDB connection string and JWT parameters:
+Update `appsettings.Development.json` in both services:
 
 ```json
 {
@@ -330,8 +358,8 @@ Update `appsettings.Development.json` in both services with your MongoDB connect
   },
   "JwtSettings": {
     "Secret": "your-secret-key",
-    "Issuer": "aruba-identity",
-    "Audience": "aruba-document",
+    "Issuer": "Aruba.Identity",
+    "Audience": "Aruba.Identity.Clients",
     "ExpiryMinutes": 60
   }
 }
@@ -340,16 +368,182 @@ Update `appsettings.Development.json` in both services with your MongoDB connect
 ### Running the services
 
 ```bash
-# Identity Service (default: https://localhost:5001)
+# Identity Service
 cd identity
 dotnet run --project src/Aruba.Identity.Api
 
-# Document Service (default: https://localhost:5002)
+# Document Service
 cd document
 dotnet run --project src/Aruba.Document.Api
 ```
 
 Swagger UI is available at `/swagger` in development mode and includes the **Authorize 🔒** button to authenticate with a JWT token directly from the interface.
+
+---
+
+## Running on Kubernetes with kind
+
+### 1. Install Docker Desktop
+
+Download and install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/).
+
+During installation, make sure **"Use WSL 2 based engine"** is enabled.
+
+After installation, open Docker Desktop → Settings → Resources → WSL Integration and enable integration for your WSL distro.
+
+Verify:
+
+```powershell
+docker --version
+```
+
+### 2. Install kind and kubectl
+
+Open PowerShell as Administrator:
+
+```powershell
+choco install kind -y
+choco install kubernetes-cli -y
+```
+
+Verify:
+
+```powershell
+kind --version
+kubectl version --client
+```
+
+### 3. Create the kind cluster
+
+```powershell
+kind create cluster --name aruba
+kubectl cluster-info --context kind-aruba
+```
+
+### 4. Create the namespace
+
+```powershell
+kubectl create namespace aruba
+```
+
+### 5. Build the Docker images
+
+From the repo root (`aruba-technical-test/`):
+
+```powershell
+# Identity Service
+docker build -t aruba-identity:latest ./identity
+
+# Document Service
+docker build -t aruba-document:latest ./document
+```
+
+### 6. Load the images into kind
+
+kind uses its own internal registry — images built locally must be explicitly loaded into the cluster:
+
+```powershell
+kind load docker-image aruba-identity:latest --name aruba
+kind load docker-image aruba-document:latest --name aruba
+```
+
+### 7. Deploy MongoDB
+
+All `kubectl apply` commands must be run from the repo root (`aruba-technical-test/`):
+
+```powershell
+kubectl apply -f k8s/mongodb/secret.yaml -n aruba
+kubectl apply -f k8s/mongodb/service.yaml -n aruba
+kubectl apply -f k8s/mongodb/statefulset.yaml -n aruba
+
+# Wait for MongoDB to be ready before proceeding
+kubectl rollout status statefulset/mongodb -n aruba
+```
+
+### 8. Deploy Identity Service
+
+```powershell
+kubectl apply -f k8s/identity/configmap.yaml -n aruba
+kubectl apply -f k8s/identity/secret.yaml -n aruba
+kubectl apply -f k8s/identity/deployment.yaml -n aruba
+kubectl apply -f k8s/identity/service.yaml -n aruba
+kubectl apply -f k8s/identity/ingress.yaml -n aruba
+
+kubectl rollout status deployment/aruba-identity -n aruba
+```
+
+### 9. Deploy Document Service
+
+```powershell
+kubectl apply -f k8s/document/configmap.yaml -n aruba
+kubectl apply -f k8s/document/secret.yaml -n aruba
+kubectl apply -f k8s/document/deployment.yaml -n aruba
+kubectl apply -f k8s/document/service.yaml -n aruba
+kubectl apply -f k8s/document/ingress.yaml -n aruba
+
+kubectl rollout status deployment/aruba-document -n aruba
+```
+
+### 10. Verify everything is running
+
+```powershell
+kubectl get all -n aruba
+```
+
+Expected output:
+
+```
+NAME                                   READY   STATUS    RESTARTS
+pod/aruba-identity-xxx                 1/1     Running   0
+pod/aruba-document-xxx                 1/1     Running   0
+pod/mongodb-0                          1/1     Running   0
+
+NAME                     TYPE        PORT(S)
+service/aruba-identity   ClusterIP   8080/TCP
+service/aruba-document   ClusterIP   8080/TCP
+service/mongodb          ClusterIP   27017/TCP
+
+NAME                             READY   UP-TO-DATE
+deployment/aruba-identity        2/2     2
+deployment/aruba-document        2/2     2
+
+NAME                             READY
+statefulset/mongodb              1/1
+```
+
+### 11. Access the services
+
+The Ingress uses `api.aruba.com` as host. Since kind does not include a load balancer by default, use port-forward to access the services locally:
+
+```powershell
+# Identity Service → http://localhost:5001
+kubectl port-forward service/aruba-identity 5001:8080 -n aruba
+
+# Document Service → http://localhost:5002
+kubectl port-forward service/aruba-document 5002:8080 -n aruba
+```
+
+Swagger UI will be available at:
+
+- `http://localhost:5001/swagger` — Identity Service
+- `http://localhost:5002/swagger` — Document Service
+
+### Redeploying after changes
+
+If you rebuild an image and want to redeploy, from the repo root (`aruba-technical-test/`):
+
+```powershell
+# Rebuild
+docker build -t aruba-identity:latest ./identity
+
+# Reload into kind
+kind load docker-image aruba-identity:latest --name aruba
+
+# Restart the deployment to pick up the new image
+kubectl rollout restart deployment/aruba-identity -n aruba
+```
+
+Same steps apply for `aruba-document`.
 
 ---
 
@@ -373,7 +567,7 @@ Example scenarios covered:
 
 ### Functional Tests
 
-Integration tests that spin up a real in-memory instance of the application using `WebApplicationFactory`. HTTP endpoints are tested end-to-end, including authentication, validation, and persistence (using a test MongoDB instance or in-memory stub). A `TestAuthHandler` bypasses JWT validation to simplify test setup.
+Integration tests that spin up a real in-memory instance of the application using `WebApplicationFactory`. HTTP endpoints are tested end-to-end, including authentication, validation, and persistence. A `TestAuthHandler` bypasses JWT validation to simplify test setup, and a `TestDataSeeder` pre-populates the database with known state before each test run.
 
 ```bash
 dotnet test identity/tests/Aruba.Identity.FunctionalTests
